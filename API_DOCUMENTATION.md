@@ -35,6 +35,89 @@ Authorization: Bearer <jwt_token>
 }
 ```
 
+## 🗂️ **Category Management APIs**
+
+### **Get Categories**
+```http
+GET /api/v1/legacy/categories?includeSubcategories=true
+Authorization: Bearer <jwt_token>
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Categories retrieved successfully",
+  "data": [
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440001",
+      "name": "Personal & Family",
+      "description": "Personal and family-related content",
+      "categoryLevel": 1,
+      "categoryType": "SYSTEM",
+      "icon": "family",
+      "color": "#4CAF50",
+      "subcategories": [
+        {
+          "id": "550e8400-e29b-41d4-a716-446655440011",
+          "name": "Letters & Messages",
+          "description": "Personal letters and messages",
+          "categoryLevel": 2,
+          "bucketCount": 3,
+          "contentCount": 15
+        }
+      ]
+    }
+  ]
+}
+```
+
+## 🪣 **Bucket Management APIs**
+
+### **Create Legacy Bucket**
+```http
+POST /api/v1/legacy/buckets
+Content-Type: application/json
+Authorization: Bearer <jwt_token>
+```
+
+**Request Body:**
+```json
+{
+  "name": "Letters to My Sons",
+  "description": "Personal letters and messages for my children",
+  "categoryId": "550e8400-e29b-41d4-a716-446655440011",
+  "privacyLevel": "FAMILY"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Legacy bucket created successfully",
+  "data": {
+    "id": "bucket-uuid",
+    "name": "Letters to My Sons",
+    "description": "Personal letters and messages for my children",
+    "categoryId": "550e8400-e29b-41d4-a716-446655440011",
+    "categoryName": "Letters & Messages",
+    "creatorId": "user-uuid",
+    "familyId": "family-uuid",
+    "bucketType": "CUSTOM",
+    "privacyLevel": "FAMILY",
+    "isFeatured": false,
+    "createdAt": "2025-09-08T12:00:00Z"
+  }
+}
+```
+
+### **Get Buckets**
+```http
+GET /api/v1/legacy/buckets?categoryId=550e8400-e29b-41d4-a716-446655440011&search=letters
+Authorization: Bearer <jwt_token>
+```
+
 ## 📝 **Content Management APIs**
 
 ### **Create Legacy Content**
@@ -47,14 +130,24 @@ Authorization: Bearer <jwt_token>
 **Request Body:**
 ```json
 {
-  "title": "Family Recipe: Grandma's Biryani",
-  "description": "Traditional family biryani recipe passed down through generations",
+  "title": "Letter to My Elder Son",
+  "content": "Dear son, I want to share with you the wisdom I've gathered over the years...",
   "contentType": "TEXT",
-  "contentData": "Ingredients: 2 cups basmati rice, 1 kg chicken...",
-  "category": "Culinary Heritage",
-  "tags": ["recipe", "biryani", "family", "traditional"],
-  "privacyLevel": "FAMILY",
-  "targetGeneration": 3
+  "bucketId": "bucket-uuid",
+  "recipients": [
+    {
+      "recipientType": "SPECIFIC_USER",
+      "recipientId": "son-user-id",
+      "personalMessage": "This is for you, my dear son"
+    }
+  ],
+  "mediaFiles": [
+    {
+      "fileName": "family_photo.jpg",
+      "s3Url": "https://legacykeep-content.s3.amazonaws.com/families/789/images/123/original/family_photo.jpg",
+      "fileType": "IMAGE"
+    }
+  ]
 }
 ```
 
@@ -248,11 +341,11 @@ Authorization: Bearer <jwt_token>
 
 **Response:** Binary file content with appropriate headers
 
-## 🔄 **Inheritance Management APIs**
+## 🎯 **Recipient Management APIs**
 
-### **Get Inheritance Status**
+### **Get Recipient Status**
 ```http
-GET /api/v1/legacy/inheritance?status=PENDING&userId=456
+GET /api/v1/legacy/recipients?status=PENDING&userId=456
 Authorization: Bearer <jwt_token>
 ```
 
@@ -260,6 +353,7 @@ Authorization: Bearer <jwt_token>
 - `status`: Filter by status (PENDING, ACCEPTED, REJECTED, EXPIRED)
 - `userId`: Filter by user ID
 - `contentId`: Filter by content ID
+- `recipientType`: Filter by recipient type (SPECIFIC_USER, GENERATION, RELATIONSHIP)
 - `page`: Page number
 - `size`: Page size
 
@@ -267,22 +361,24 @@ Authorization: Bearer <jwt_token>
 ```json
 {
   "success": true,
-  "message": "Inheritance status retrieved successfully",
+  "message": "Recipient status retrieved successfully",
   "data": {
-    "inheritance": [
+    "recipients": [
       {
-        "id": 1,
-        "contentId": 123,
-        "contentTitle": "Family Recipe: Grandma's Biryani",
-        "fromUserId": 456,
-        "fromUserName": "John Doe",
-        "toUserId": 789,
-        "toUserName": "Jane Doe",
-        "inheritanceType": "DIRECT",
+        "id": "recipient-uuid",
+        "contentId": "content-uuid",
+        "contentTitle": "Letter to My Elder Son",
+        "bucketName": "Letters to My Sons",
+        "creatorId": "creator-uuid",
+        "creatorName": "John Doe",
+        "recipientId": "recipient-uuid",
+        "recipientName": "Jane Doe",
+        "recipientType": "SPECIFIC_USER",
+        "recipientRelationship": "elder son",
+        "accessLevel": "READ",
         "status": "PENDING",
-        "inheritanceDate": "2025-09-08T12:00:00Z",
-        "expiresAt": "2025-10-08T12:00:00Z",
-        "notes": "Please accept this family recipe"
+        "personalMessage": "This is for you, my dear son",
+        "createdAt": "2025-09-08T12:00:00Z"
       }
     ],
     "pagination": {
@@ -295,9 +391,9 @@ Authorization: Bearer <jwt_token>
 }
 ```
 
-### **Accept Inheritance**
+### **Accept Content**
 ```http
-POST /api/v1/legacy/inheritance/1/accept
+POST /api/v1/legacy/recipients/{recipientId}/accept
 Content-Type: application/json
 Authorization: Bearer <jwt_token>
 ```
@@ -305,13 +401,13 @@ Authorization: Bearer <jwt_token>
 **Request Body:**
 ```json
 {
-  "notes": "Thank you for sharing this recipe"
+  "message": "Thank you for sharing this with me"
 }
 ```
 
-### **Reject Inheritance**
+### **Reject Content**
 ```http
-POST /api/v1/legacy/inheritance/1/reject
+POST /api/v1/legacy/recipients/{recipientId}/reject
 Content-Type: application/json
 Authorization: Bearer <jwt_token>
 ```
@@ -319,7 +415,7 @@ Authorization: Bearer <jwt_token>
 **Request Body:**
 ```json
 {
-  "reason": "Already have this recipe"
+  "reason": "Not ready to receive this content yet"
 }
 ```
 
@@ -327,16 +423,17 @@ Authorization: Bearer <jwt_token>
 
 ### **Search Legacy Content**
 ```http
-GET /api/v1/legacy/search?q=biryani&type=recipe&generation=2&category=Culinary Heritage
+GET /api/v1/legacy/search?q=letter&bucketId=bucket-uuid&categoryId=550e8400-e29b-41d4-a716-446655440011
 Authorization: Bearer <jwt_token>
 ```
 
 **Query Parameters:**
 - `q`: Search query
-- `type`: Content type filter
-- `generation`: Generation level filter
-- `category`: Category filter
-- `tags`: Tag filter
+- `bucketId`: Filter by specific bucket
+- `categoryId`: Filter by category
+- `contentType`: Content type filter (TEXT, AUDIO, VIDEO, IMAGE, DOCUMENT)
+- `recipientType`: Filter by recipient type
+- `status`: Filter by content status
 - `dateFrom`: Start date filter
 - `dateTo`: End date filter
 - `page`: Page number
@@ -381,6 +478,20 @@ Authorization: Bearer <jwt_token>
 }
 ```
 
+### **Search Buckets**
+```http
+GET /api/v1/legacy/buckets/search?q=letters&categoryId=550e8400-e29b-41d4-a716-446655440011
+Authorization: Bearer <jwt_token>
+```
+
+**Query Parameters:**
+- `q`: Search query for bucket names
+- `categoryId`: Filter by category
+- `creatorId`: Filter by bucket creator
+- `isFeatured`: Filter featured buckets
+- `page`: Page number
+- `size`: Page size
+
 ### **Get Content Recommendations**
 ```http
 GET /api/v1/legacy/recommendations?userId=456&limit=10
@@ -390,7 +501,7 @@ Authorization: Bearer <jwt_token>
 **Query Parameters:**
 - `userId`: User ID for recommendations
 - `limit`: Number of recommendations (default: 10)
-- `type`: Recommendation type (SIMILAR, TRENDING, FAMILY)
+- `type`: Recommendation type (SIMILAR, TRENDING, FAMILY, BUCKET)
 
 ### **Get Legacy Timeline**
 ```http
