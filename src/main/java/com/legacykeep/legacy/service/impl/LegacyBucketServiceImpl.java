@@ -1,0 +1,319 @@
+package com.legacykeep.legacy.service.impl;
+
+import com.legacykeep.legacy.dto.request.CreateBucketRequest;
+import com.legacykeep.legacy.dto.response.BucketResponse;
+import com.legacykeep.legacy.dto.response.CategoryResponse;
+import com.legacykeep.legacy.entity.LegacyBucket;
+import com.legacykeep.legacy.repository.LegacyBucketRepository;
+import com.legacykeep.legacy.repository.LegacyCategoryRepository;
+import com.legacykeep.legacy.service.LegacyBucketService;
+import com.legacykeep.legacy.service.LegacyCategoryService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+/**
+ * Service implementation for managing legacy buckets
+ */
+@Service
+@RequiredArgsConstructor
+@Slf4j
+@Transactional
+public class LegacyBucketServiceImpl implements LegacyBucketService {
+
+    private final LegacyBucketRepository bucketRepository;
+    private final LegacyCategoryRepository categoryRepository;
+    private final LegacyCategoryService categoryService;
+
+    @Override
+    public Page<BucketResponse> getBucketsWithFilters(
+            Pageable pageable,
+            UUID creatorId,
+            UUID familyId,
+            UUID categoryId,
+            LegacyBucket.BucketType bucketType,
+            Boolean featured,
+            String sortBy,
+            String sortDir) {
+        
+        log.info("Fetching buckets with filters - creatorId: {}, familyId: {}, categoryId: {}, bucketType: {}, featured: {}", 
+                creatorId, familyId, categoryId, bucketType, featured);
+        
+        // For now, return all buckets with basic pagination
+        // TODO: Implement proper filtering logic
+        Page<LegacyBucket> bucketPage = bucketRepository.findAll(pageable);
+        return bucketPage.map(this::mapToResponse);
+    }
+
+    @Override
+    public BucketResponse createBucket(CreateBucketRequest request) {
+        log.info("Creating new bucket: {} for creator: {}", request.getName(), request.getCreatorId());
+
+        // Validate category exists
+        if (!categoryRepository.existsById(request.getCategoryId())) {
+            throw new IllegalArgumentException("Category not found");
+        }
+
+        // Check if bucket name already exists for this creator
+        if (bucketRepository.findByNameAndCreatorId(request.getName(), request.getCreatorId()).isPresent()) {
+            throw new IllegalArgumentException("Bucket with name '" + request.getName() + "' already exists for this creator");
+        }
+
+        LegacyBucket bucket = LegacyBucket.builder()
+                .name(request.getName())
+                .description(request.getDescription())
+                .categoryId(request.getCategoryId())
+                .creatorId(request.getCreatorId())
+                .familyId(request.getFamilyId())
+                .bucketType(request.getBucketType())
+                .privacyLevel(request.getPrivacyLevel())
+                .isFeatured(request.getIsFeatured() != null ? request.getIsFeatured() : false)
+                .sortOrder(request.getSortOrder() != null ? request.getSortOrder() : 0)
+                .build();
+
+        LegacyBucket savedBucket = bucketRepository.save(bucket);
+        log.info("Created bucket with ID: {}", savedBucket.getId());
+
+        return mapToResponse(savedBucket);
+    }
+
+    @Override
+    public Page<BucketResponse> searchBuckets(String keyword, Pageable pageable, UUID creatorId, UUID categoryId) {
+        log.info("Searching buckets with keyword: '{}', creatorId: {}, categoryId: {}", keyword, creatorId, categoryId);
+        
+        // For now, return all buckets with basic pagination
+        // TODO: Implement proper search logic
+        Page<LegacyBucket> bucketPage = bucketRepository.findAll(pageable);
+        return bucketPage.map(this::mapToResponse);
+    }
+
+    @Override
+    public BucketResponse updateBucket(UUID id, CreateBucketRequest request) {
+        log.info("Updating bucket: {}", id);
+        
+        LegacyBucket existingBucket = bucketRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Bucket not found with ID: " + id));
+        
+        // Update fields
+        existingBucket.setName(request.getName());
+        existingBucket.setDescription(request.getDescription());
+        existingBucket.setCategoryId(request.getCategoryId());
+        existingBucket.setBucketType(request.getBucketType());
+        existingBucket.setPrivacyLevel(request.getPrivacyLevel());
+        existingBucket.setIsFeatured(request.getIsFeatured());
+        existingBucket.setSortOrder(request.getSortOrder());
+        
+        LegacyBucket updatedBucket = bucketRepository.save(existingBucket);
+        return mapToResponse(updatedBucket);
+    }
+
+    @Override
+    public void deleteBucket(UUID id) {
+        log.info("Deleting bucket: {}", id);
+        
+        LegacyBucket bucket = bucketRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Bucket not found with ID: " + id));
+        
+        bucketRepository.delete(bucket);
+    }
+
+    @Override
+    public Page<BucketResponse> getAccessibleBuckets(UUID userId, UUID familyId, Pageable pageable) {
+        log.info("Getting accessible buckets for user: {} in family: {}", userId, familyId);
+        
+        // For now, return all buckets with basic pagination
+        // TODO: Implement proper access control logic
+        Page<LegacyBucket> bucketPage = bucketRepository.findAll(pageable);
+        return bucketPage.map(this::mapToResponse);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public BucketResponse getBucketById(UUID id) {
+        log.info("Fetching bucket by ID: {}", id);
+        LegacyBucket bucket = bucketRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Bucket not found"));
+        
+        return mapToResponse(bucket);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<BucketResponse> getBucketsByCreator(UUID creatorId) {
+        log.info("Fetching buckets for creator: {}", creatorId);
+        return bucketRepository.findByCreatorId(creatorId)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<BucketResponse> getBucketsByFamily(UUID familyId) {
+        log.info("Fetching buckets for family: {}", familyId);
+        return bucketRepository.findByFamilyId(familyId)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<BucketResponse> getBucketsByCategory(UUID categoryId) {
+        log.info("Fetching buckets for category: {}", categoryId);
+        return bucketRepository.findByCategoryId(categoryId)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<BucketResponse> getFeaturedBuckets() {
+        log.info("Fetching featured buckets");
+        return bucketRepository.findFeaturedBuckets()
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<BucketResponse> getFeaturedBucketsByCreator(UUID creatorId) {
+        log.info("Fetching featured buckets for creator: {}", creatorId);
+        return bucketRepository.findFeaturedBucketsByCreator(creatorId)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<BucketResponse> getAccessibleBuckets(UUID userId, UUID familyId) {
+        log.info("Fetching accessible buckets for user: {}", userId);
+        return bucketRepository.findAccessibleBuckets(userId, familyId)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public BucketResponse updateBucket(UUID id, CreateBucketRequest request) {
+        log.info("Updating bucket: {}", id);
+
+        LegacyBucket bucket = bucketRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Bucket not found"));
+
+        // Validate category exists
+        if (!categoryRepository.existsById(request.getCategoryId())) {
+            throw new IllegalArgumentException("Category not found");
+        }
+
+        // Check if name is being changed and if it already exists for this creator
+        if (!bucket.getName().equals(request.getName())) {
+            if (bucketRepository.findByNameAndCreatorId(request.getName(), request.getCreatorId()).isPresent()) {
+                throw new IllegalArgumentException("Bucket with name '" + request.getName() + "' already exists for this creator");
+            }
+        }
+
+        bucket.setName(request.getName());
+        bucket.setDescription(request.getDescription());
+        bucket.setCategoryId(request.getCategoryId());
+        bucket.setBucketType(request.getBucketType());
+        bucket.setPrivacyLevel(request.getPrivacyLevel());
+        if (request.getIsFeatured() != null) {
+            bucket.setIsFeatured(request.getIsFeatured());
+        }
+        if (request.getSortOrder() != null) {
+            bucket.setSortOrder(request.getSortOrder());
+        }
+
+        LegacyBucket updatedBucket = bucketRepository.save(bucket);
+        log.info("Updated bucket: {}", updatedBucket.getId());
+
+        return mapToResponse(updatedBucket);
+    }
+
+    @Override
+    public void deleteBucket(UUID id) {
+        log.info("Deleting bucket: {}", id);
+
+        LegacyBucket bucket = bucketRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Bucket not found"));
+
+        if (!bucket.canBeDeleted()) {
+            throw new IllegalStateException("Bucket cannot be deleted as it contains content");
+        }
+
+        bucketRepository.delete(bucket);
+        log.info("Deleted bucket: {}", id);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<BucketResponse> searchBuckets(String name) {
+        log.info("Searching buckets by name: {}", name);
+        return bucketRepository.findByNameContainingIgnoreCase(name)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<BucketResponse> searchBucketsByCreator(UUID creatorId, String name) {
+        log.info("Searching buckets by creator: {} and name: {}", creatorId, name);
+        return bucketRepository.findByCreatorIdAndNameContainingIgnoreCase(creatorId, name)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<BucketResponse> getRecentBucketsByCreator(UUID creatorId) {
+        log.info("Fetching recent buckets for creator: {}", creatorId);
+        return bucketRepository.findRecentBucketsByCreator(creatorId)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Map entity to response DTO
+     */
+    private BucketResponse mapToResponse(LegacyBucket bucket) {
+        // Get category information
+        CategoryResponse category = null;
+        if (bucket.getCategory() != null) {
+            category = categoryService.getCategoryById(bucket.getCategory().getId());
+        }
+
+        return BucketResponse.builder()
+                .id(bucket.getId())
+                .name(bucket.getName())
+                .description(bucket.getDescription())
+                .categoryId(bucket.getCategoryId())
+                .creatorId(bucket.getCreatorId())
+                .familyId(bucket.getFamilyId())
+                .bucketType(bucket.getBucketType())
+                .privacyLevel(bucket.getPrivacyLevel())
+                .isFeatured(bucket.getIsFeatured())
+                .sortOrder(bucket.getSortOrder())
+                .createdAt(bucket.getCreatedAt())
+                .updatedAt(bucket.getUpdatedAt())
+                .fullPath(bucket.getFullPath())
+                .contentCount(bucket.getContentCount())
+                .totalMediaSize(bucket.getTotalMediaSize())
+                .contentSummary(bucket.getContentSummary())
+                .canBeDeleted(bucket.canBeDeleted())
+                .isEmpty(bucket.isEmpty())
+                .category(category)
+                .build();
+    }
+}
