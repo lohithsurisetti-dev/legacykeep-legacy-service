@@ -60,7 +60,6 @@ public class LegacyContentServiceImpl implements LegacyContentService {
     public ContentResponse createContent(CreateContentRequest request) {
         log.info("Creating new content: {}", request.getTitle());
         
-        // Create content entity
         LegacyContent content = LegacyContent.builder()
                 .title(request.getTitle())
                 .content(request.getContent())
@@ -74,8 +73,8 @@ public class LegacyContentServiceImpl implements LegacyContentService {
                 .sortOrder(request.getSortOrder())
                 .build();
 
-        final LegacyContent savedContent = contentRepository.save(content);
-        log.info("Content created with ID: {}", savedContent.getId());
+        LegacyContent savedContent = contentRepository.save(content);
+        log.info("Created content with ID: {}", savedContent.getId());
 
         // Save media files if provided
         if (request.getMediaFiles() != null && !request.getMediaFiles().isEmpty()) {
@@ -84,11 +83,12 @@ public class LegacyContentServiceImpl implements LegacyContentService {
                             .contentId(savedContent.getId())
                             .fileName(mediaRequest.getFileName())
                             .originalFileName(mediaRequest.getOriginalFileName())
+                            .fileSize(mediaRequest.getFileSize())
+                            .mimeType(mediaRequest.getMimeType())
                             .s3Url(mediaRequest.getS3Url())
                             .thumbnailUrl(mediaRequest.getThumbnailUrl())
                             .fileType(mediaRequest.getFileType())
-                            .fileSize(mediaRequest.getFileSize())
-                            .mimeType(mediaRequest.getMimeType())
+                            .createdAt(ZonedDateTime.now())
                             .build())
                     .collect(Collectors.toList());
             
@@ -183,254 +183,19 @@ public class LegacyContentServiceImpl implements LegacyContentService {
     public ContentResponse getContentById(UUID id) {
         log.debug("Getting content by ID: {}", id);
         LegacyContent content = contentRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Content not found with ID: " + id));
+                .orElseThrow(() -> new IllegalArgumentException("Content not found with ID: " + id));
         return convertToResponse(content);
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public List<ContentResponse> getContentByBucket(UUID bucketId) {
-        log.debug("Getting content by bucket: {}", bucketId);
-        List<LegacyContent> contents = contentRepository.findByBucketId(bucketId);
-        return contents.stream()
-                .map(this::convertToResponse)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public Page<ContentResponse> getContentByBucket(UUID bucketId, Pageable pageable) {
-        log.debug("Getting content by bucket with pagination: {}", bucketId);
-        Page<LegacyContent> contents = contentRepository.findByBucketId(bucketId, pageable);
-        return contents.map(this::convertToResponse);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<ContentResponse> getContentByCreator(UUID creatorId) {
-        log.debug("Getting content by creator: {}", creatorId);
-        List<LegacyContent> contents = contentRepository.findByCreatorId(creatorId);
-        return contents.stream()
-                .map(this::convertToResponse)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public Page<ContentResponse> getContentByCreator(UUID creatorId, Pageable pageable) {
-        log.debug("Getting content by creator with pagination: {}", creatorId);
-        Page<LegacyContent> contents = contentRepository.findByCreatorId(creatorId, pageable);
-        return contents.map(this::convertToResponse);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<ContentResponse> getContentByFamily(UUID familyId) {
-        log.debug("Getting content by family: {}", familyId);
-        List<LegacyContent> contents = contentRepository.findByFamilyId(familyId);
-        return contents.stream()
-                .map(this::convertToResponse)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<ContentResponse> getFeaturedContent() {
-        log.debug("Getting featured content");
-        List<LegacyContent> contents = contentRepository.findFeaturedContent();
-        return contents.stream()
-                .map(this::convertToResponse)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<ContentResponse> getFeaturedContentByCreator(UUID creatorId) {
-        log.debug("Getting featured content by creator: {}", creatorId);
-        List<LegacyContent> contents = contentRepository.findFeaturedContentByCreator(creatorId);
-        return contents.stream()
-                .map(this::convertToResponse)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<ContentResponse> getAccessibleContent(UUID userId, UUID familyId) {
-        log.debug("Getting accessible content for user: {} in family: {}", userId, familyId);
-        List<LegacyContent> contents = contentRepository.findAccessibleContent(userId, familyId);
-        return contents.stream()
-                .map(this::convertToResponse)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public Page<ContentResponse> getAccessibleContent(UUID userId, UUID familyId, Pageable pageable) {
-        log.debug("Getting accessible content for user with pagination: {} in family: {}", userId, familyId);
-        Page<LegacyContent> contents = contentRepository.findAccessibleContent(userId, familyId, pageable);
-        return contents.map(this::convertToResponse);
-    }
-
-    @Override
-    public ContentResponse updateContent(UUID id, CreateContentRequest request) {
-        log.info("Updating content: {}", id);
-        
-        LegacyContent content = contentRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Content not found with ID: " + id));
-
-        // Update content fields
-        content.setTitle(request.getTitle());
-        content.setContent(request.getContent());
-        content.setContentType(request.getContentType());
-        content.setBucketId(request.getBucketId());
-        content.setGenerationLevel(request.getGenerationLevel());
-        content.setPrivacyLevel(request.getPrivacyLevel());
-        content.setIsFeatured(request.getIsFeatured());
-        content.setSortOrder(request.getSortOrder());
-
-        content = contentRepository.save(content);
-        log.info("Content updated: {}", content.getId());
-
-        return convertToResponse(content);
-    }
-
-    @Override
-    public void deleteContent(UUID id) {
-        log.info("Deleting content: {}", id);
-        
-        // Delete associated media files
-        List<LegacyMediaFile> mediaFiles = mediaFileRepository.findByContentId(id);
-        if (!mediaFiles.isEmpty()) {
-            mediaFileRepository.deleteAll(mediaFiles);
-        }
-        
-        // Delete associated recipients
-        List<LegacyRecipient> recipients = recipientRepository.findByContentId(id);
-        if (!recipients.isEmpty()) {
-            recipientRepository.deleteAll(recipients);
-        }
-        
-        // Delete content
-        contentRepository.deleteById(id);
-        
-        log.info("Content deleted: {}", id);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<ContentResponse> searchContent(String title) {
-        log.debug("Searching content by title: {}", title);
-        List<LegacyContent> contents = contentRepository.findByTitleContainingIgnoreCase(title);
-        return contents.stream()
-                .map(this::convertToResponse)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<ContentResponse> searchContentByCreator(UUID creatorId, String title) {
-        log.debug("Searching content by creator: {} and title: {}", creatorId, title);
-        List<LegacyContent> contents = contentRepository.findByCreatorIdAndTitleContainingIgnoreCase(creatorId, title);
-        return contents.stream()
-                .map(this::convertToResponse)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<ContentResponse> searchContentByBucket(UUID bucketId, String title) {
-        log.debug("Searching content by bucket: {} and title: {}", bucketId, title);
-        List<LegacyContent> contents = contentRepository.findByBucketIdAndTitleContainingIgnoreCase(bucketId, title);
-        return contents.stream()
-                .map(this::convertToResponse)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<ContentResponse> getContentByType(LegacyContent.ContentType contentType) {
-        log.debug("Getting content by type: {}", contentType);
-        List<LegacyContent> contents = contentRepository.findByContentType(contentType);
-        return contents.stream()
-                .map(this::convertToResponse)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<ContentResponse> getContentByCreatorAndType(UUID creatorId, LegacyContent.ContentType contentType) {
-        log.debug("Getting content by creator: {} and type: {}", creatorId, contentType);
-        List<LegacyContent> contents = contentRepository.findByCreatorIdAndContentType(creatorId, contentType);
-        return contents.stream()
-                .map(this::convertToResponse)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<ContentResponse> getContentByDateRange(ZonedDateTime startDate, ZonedDateTime endDate) {
-        log.debug("Getting content by date range: {} to {}", startDate, endDate);
-        List<LegacyContent> contents = contentRepository.findByCreatedAtBetween(startDate, endDate);
-        return contents.stream()
-                .map(this::convertToResponse)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<ContentResponse> getContentByCreatorAndDateRange(UUID creatorId, ZonedDateTime startDate, ZonedDateTime endDate) {
-        log.debug("Getting content by creator: {} and date range: {} to {}", creatorId, startDate, endDate);
-        List<LegacyContent> contents = contentRepository.findByCreatorIdAndCreatedAtBetween(creatorId, startDate, endDate);
-        return contents.stream()
-                .map(this::convertToResponse)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<ContentResponse> getRecentContentByCreator(UUID creatorId) {
-        log.debug("Getting recent content by creator: {}", creatorId);
-        List<LegacyContent> contents = contentRepository.findRecentContentByCreator(creatorId);
-        return contents.stream()
-                .map(this::convertToResponse)
-                .collect(Collectors.toList());
-    }
-
-    /**
-     * Convert LegacyContent entity to ContentResponse DTO
-     */
     private ContentResponse convertToResponse(LegacyContent content) {
-        // Get media files for this content
         List<MediaFileResponse> mediaFiles = mediaFileRepository.findByContentId(content.getId())
                 .stream()
-                .map(media -> MediaFileResponse.builder()
-                        .id(media.getId())
-                        .contentId(media.getContentId())
-                        .fileName(media.getFileName())
-                        .originalFileName(media.getOriginalFileName())
-                        .s3Url(media.getS3Url())
-                        .thumbnailUrl(media.getThumbnailUrl())
-                        .fileType(media.getFileType())
-                        .fileSize(media.getFileSize())
-                        .mimeType(media.getMimeType())
-                        .processingStatus(media.getProcessingStatus())
-                        .createdAt(media.getCreatedAt())
-                        .build())
+                .map(this::convertToMediaResponse)
                 .collect(Collectors.toList());
 
-        // Get recipients for this content
         List<RecipientResponse> recipients = recipientRepository.findByContentId(content.getId())
                 .stream()
-                .map(recipient -> RecipientResponse.builder()
-                        .id(recipient.getId())
-                        .recipientId(recipient.getRecipientId())
-                        .recipientType(recipient.getRecipientType())
-                        .recipientRelationship(recipient.getRecipientRelationship())
-                        .accessLevel(recipient.getAccessLevel())
-                        .status(recipient.getStatus())
-                        .personalMessage(recipient.getPersonalMessage())
-                        .createdAt(recipient.getCreatedAt())
-                        .build())
+                .map(this::convertToRecipientResponse)
                 .collect(Collectors.toList());
 
         return ContentResponse.builder()
@@ -449,6 +214,36 @@ public class LegacyContentServiceImpl implements LegacyContentService {
                 .recipients(recipients)
                 .createdAt(content.getCreatedAt())
                 .updatedAt(content.getUpdatedAt())
+                .build();
+    }
+
+    private MediaFileResponse convertToMediaResponse(LegacyMediaFile mediaFile) {
+        return MediaFileResponse.builder()
+                .id(mediaFile.getId())
+                .contentId(mediaFile.getContentId())
+                .fileName(mediaFile.getFileName())
+                .originalFileName(mediaFile.getOriginalFileName())
+                .fileSize(mediaFile.getFileSize())
+                .mimeType(mediaFile.getMimeType())
+                .s3Url(mediaFile.getS3Url())
+                .thumbnailUrl(mediaFile.getThumbnailUrl())
+                .fileType(mediaFile.getFileType())
+                .createdAt(mediaFile.getCreatedAt())
+                .build();
+    }
+
+    private RecipientResponse convertToRecipientResponse(LegacyRecipient recipient) {
+        return RecipientResponse.builder()
+                .id(recipient.getId())
+                .contentId(recipient.getContentId())
+                .recipientId(recipient.getRecipientId())
+                .recipientType(recipient.getRecipientType())
+                .recipientRelationship(recipient.getRecipientRelationship())
+                .accessLevel(recipient.getAccessLevel())
+                .personalMessage(recipient.getPersonalMessage())
+                .status(recipient.getStatus())
+                .createdAt(recipient.getCreatedAt())
+                .updatedAt(recipient.getUpdatedAt())
                 .build();
     }
 }
