@@ -19,6 +19,7 @@ com/legacykeep/legacy/entity/LegacyBucket.class
 com/legacykeep/legacy/dto/request/CreateBucketRequest$CreateBucketRequestBuilder.class
 com/legacykeep/legacy/service/impl/LegacyBucketServiceImpl.class
 com/legacykeep/legacy/dto/response/RecipientResponse.class
+com/legacykeep/legacy/entity/LegacyBucket$BucketStatus.class
 com/legacykeep/legacy/dto/response/ApiResponse$ApiResponseBuilder.class
 com/legacykeep/legacy/entity/LegacyCategory.class
 com/legacykeep/legacy/dto/request/CreateBucketRequest.class

@@ -50,9 +50,9 @@ public class LegacyContentServiceImpl implements LegacyContentService {
         log.info("Fetching content with filters - bucketId: {}, creatorId: {}, familyId: {}, contentType: {}, featured: {}", 
                 bucketId, creatorId, familyId, contentType, featured);
         
-        // For now, return all content with basic pagination
+        // Return only active content (not deleted) with basic pagination
         // TODO: Implement proper filtering logic
-        Page<LegacyContent> contentPage = contentRepository.findAll(pageable);
+        Page<LegacyContent> contentPage = contentRepository.findAllActive(pageable);
         return contentPage.map(this::convertToResponse);
     }
 
@@ -120,9 +120,9 @@ public class LegacyContentServiceImpl implements LegacyContentService {
     public Page<ContentResponse> searchContent(String keyword, Pageable pageable, UUID bucketId, UUID creatorId) {
         log.info("Searching content with keyword: '{}', bucketId: {}, creatorId: {}", keyword, bucketId, creatorId);
         
-        // For now, return all content with basic pagination
+        // Return only active content (not deleted) with basic pagination
         // TODO: Implement proper search logic
-        Page<LegacyContent> contentPage = contentRepository.findAll(pageable);
+        Page<LegacyContent> contentPage = contentRepository.findAllActive(pageable);
         return contentPage.map(this::convertToResponse);
     }
 
@@ -149,32 +149,25 @@ public class LegacyContentServiceImpl implements LegacyContentService {
 
     @Override
     public void deleteContent(UUID id) {
-        log.info("Deleting content: {}", id);
+        log.info("Soft deleting content: {}", id);
         
         LegacyContent content = contentRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Content not found with ID: " + id));
         
-        // Delete associated media files and recipients first
-        List<LegacyMediaFile> mediaFiles = mediaFileRepository.findByContentId(id);
-        if (!mediaFiles.isEmpty()) {
-            mediaFileRepository.deleteAll(mediaFiles);
-        }
+        // Soft delete - mark as DELETED instead of removing from database
+        content.setStatus(LegacyContent.ContentStatus.DELETED);
+        contentRepository.save(content);
         
-        List<LegacyRecipient> recipients = recipientRepository.findByContentId(id);
-        if (!recipients.isEmpty()) {
-            recipientRepository.deleteAll(recipients);
-        }
-        
-        contentRepository.delete(content);
+        log.info("Content {} marked as deleted (soft delete)", id);
     }
 
     @Override
     public Page<ContentResponse> getAccessibleContent(UUID userId, UUID familyId, Pageable pageable) {
         log.info("Getting accessible content for user: {} in family: {}", userId, familyId);
         
-        // For now, return all content with basic pagination
+        // Return only active content (not deleted) with basic pagination
         // TODO: Implement proper access control logic
-        Page<LegacyContent> contentPage = contentRepository.findAll(pageable);
+        Page<LegacyContent> contentPage = contentRepository.findAllActive(pageable);
         return contentPage.map(this::convertToResponse);
     }
 

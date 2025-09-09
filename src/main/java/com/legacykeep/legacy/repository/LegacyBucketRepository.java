@@ -1,6 +1,8 @@
 package com.legacykeep.legacy.repository;
 
 import com.legacykeep.legacy.entity.LegacyBucket;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -20,49 +22,49 @@ public interface LegacyBucketRepository extends JpaRepository<LegacyBucket, UUID
     /**
      * Find buckets by creator
      */
-    @Query("SELECT b FROM LegacyBucket b WHERE b.creatorId = :creatorId ORDER BY b.sortOrder, b.name")
+    @Query("SELECT b FROM LegacyBucket b WHERE b.creatorId = :creatorId AND b.status != 'DELETED' AND b.status != 'DELETED' ORDER BY b.sortOrder, b.name")
     List<LegacyBucket> findByCreatorId(@Param("creatorId") UUID creatorId);
 
     /**
      * Find buckets by family
      */
-    @Query("SELECT b FROM LegacyBucket b WHERE b.familyId = :familyId ORDER BY b.sortOrder, b.name")
+    @Query("SELECT b FROM LegacyBucket b WHERE b.familyId = :familyId AND b.status != 'DELETED' ORDER BY b.sortOrder, b.name")
     List<LegacyBucket> findByFamilyId(@Param("familyId") UUID familyId);
 
     /**
      * Find buckets by category
      */
-    @Query("SELECT b FROM LegacyBucket b WHERE b.categoryId = :categoryId ORDER BY b.sortOrder, b.name")
+    @Query("SELECT b FROM LegacyBucket b WHERE b.categoryId = :categoryId AND b.status != 'DELETED' ORDER BY b.sortOrder, b.name")
     List<LegacyBucket> findByCategoryId(@Param("categoryId") UUID categoryId);
 
     /**
      * Find buckets by creator and category
      */
-    @Query("SELECT b FROM LegacyBucket b WHERE b.creatorId = :creatorId AND b.categoryId = :categoryId ORDER BY b.sortOrder, b.name")
+    @Query("SELECT b FROM LegacyBucket b WHERE b.creatorId = :creatorId AND b.categoryId = :categoryId AND b.status != 'DELETED' ORDER BY b.sortOrder, b.name")
     List<LegacyBucket> findByCreatorIdAndCategoryId(@Param("creatorId") UUID creatorId, @Param("categoryId") UUID categoryId);
 
     /**
      * Find featured buckets
      */
-    @Query("SELECT b FROM LegacyBucket b WHERE b.isFeatured = true ORDER BY b.sortOrder, b.name")
+    @Query("SELECT b FROM LegacyBucket b WHERE b.isFeatured = true AND b.status != 'DELETED' ORDER BY b.sortOrder, b.name")
     List<LegacyBucket> findFeaturedBuckets();
 
     /**
      * Find featured buckets by creator
      */
-    @Query("SELECT b FROM LegacyBucket b WHERE b.creatorId = :creatorId AND b.isFeatured = true ORDER BY b.sortOrder, b.name")
+    @Query("SELECT b FROM LegacyBucket b WHERE b.creatorId = :creatorId AND b.isFeatured = true AND b.status != 'DELETED' ORDER BY b.sortOrder, b.name")
     List<LegacyBucket> findFeaturedBucketsByCreator(@Param("creatorId") UUID creatorId);
 
     /**
      * Find buckets by type
      */
-    @Query("SELECT b FROM LegacyBucket b WHERE b.bucketType = :type ORDER BY b.sortOrder, b.name")
+    @Query("SELECT b FROM LegacyBucket b WHERE b.bucketType = :type AND b.status != 'DELETED' ORDER BY b.sortOrder, b.name")
     List<LegacyBucket> findByBucketType(@Param("type") LegacyBucket.BucketType type);
 
     /**
      * Find buckets by privacy level
      */
-    @Query("SELECT b FROM LegacyBucket b WHERE b.privacyLevel = :privacyLevel ORDER BY b.sortOrder, b.name")
+    @Query("SELECT b FROM LegacyBucket b WHERE b.privacyLevel = :privacyLevel AND b.status != 'DELETED' ORDER BY b.sortOrder, b.name")
     List<LegacyBucket> findByPrivacyLevel(@Param("privacyLevel") LegacyBucket.PrivacyLevel privacyLevel);
 
     /**
@@ -74,13 +76,13 @@ public interface LegacyBucketRepository extends JpaRepository<LegacyBucket, UUID
     /**
      * Find buckets by name containing (case insensitive)
      */
-    @Query("SELECT b FROM LegacyBucket b WHERE LOWER(b.name) LIKE LOWER(CONCAT('%', :name, '%')) ORDER BY b.sortOrder, b.name")
+    @Query("SELECT b FROM LegacyBucket b WHERE LOWER(b.name) LIKE LOWER(CONCAT('%', :name, '%')) AND b.status != 'DELETED' ORDER BY b.sortOrder, b.name")
     List<LegacyBucket> findByNameContainingIgnoreCase(@Param("name") String name);
 
     /**
      * Find buckets by creator with name containing
      */
-    @Query("SELECT b FROM LegacyBucket b WHERE b.creatorId = :creatorId AND LOWER(b.name) LIKE LOWER(CONCAT('%', :name, '%')) ORDER BY b.sortOrder, b.name")
+    @Query("SELECT b FROM LegacyBucket b WHERE b.creatorId = :creatorId AND LOWER(b.name) LIKE LOWER(CONCAT('%', :name, '%')) AND b.status != 'DELETED' ORDER BY b.sortOrder, b.name")
     List<LegacyBucket> findByCreatorIdAndNameContainingIgnoreCase(@Param("creatorId") UUID creatorId, @Param("name") String name);
 
     /**
@@ -109,7 +111,7 @@ public interface LegacyBucketRepository extends JpaRepository<LegacyBucket, UUID
            "(b.privacyLevel = 'FAMILY' AND b.familyId = :familyId) OR " +
            "(b.privacyLevel = 'EXTENDED_FAMILY' AND b.familyId = :familyId) OR " +
            "(b.creatorId = :userId) " +
-           "ORDER BY b.sortOrder, b.name")
+           "AND b.status != 'DELETED' ORDER BY b.sortOrder, b.name")
     List<LegacyBucket> findAccessibleBuckets(@Param("userId") UUID userId, @Param("familyId") UUID familyId);
 
     /**
@@ -122,6 +124,12 @@ public interface LegacyBucketRepository extends JpaRepository<LegacyBucket, UUID
      * Find buckets with content count
      */
     @Query("SELECT b, COUNT(c) as contentCount FROM LegacyBucket b LEFT JOIN LegacyContent c ON b.id = c.bucketId " +
-           "WHERE b.creatorId = :creatorId GROUP BY b.id ORDER BY b.sortOrder, b.name")
+           "WHERE b.creatorId = :creatorId AND b.status != 'DELETED' GROUP BY b.id ORDER BY b.sortOrder, b.name")
     List<Object[]> findBucketsWithContentCount(@Param("creatorId") UUID creatorId);
+
+    /**
+     * Find all active buckets (not deleted) with pagination
+     */
+    @Query("SELECT b FROM LegacyBucket b WHERE b.status != 'DELETED' ORDER BY b.sortOrder, b.name")
+    Page<LegacyBucket> findAllActive(Pageable pageable);
 }

@@ -81,6 +81,11 @@ public class LegacyBucket {
     @Builder.Default
     private Integer sortOrder = 0;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false, length = 50)
+    @Builder.Default
+    private BucketStatus status = BucketStatus.ACTIVE;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private ZonedDateTime createdAt;
@@ -137,6 +142,23 @@ public class LegacyBucket {
         }
     }
 
+    public enum BucketStatus {
+        ACTIVE("Active and visible"),
+        INACTIVE("Inactive but preserved"),
+        ARCHIVED("Archived for long-term storage"),
+        DELETED("Marked for deletion");
+
+        private final String description;
+
+        BucketStatus(String description) {
+            this.description = description;
+        }
+
+        public String getDescription() {
+            return description;
+        }
+    }
+
     // ==============================================
     // BUSINESS LOGIC METHODS
     // ==============================================
@@ -153,6 +175,27 @@ public class LegacyBucket {
      */
     public boolean isEmpty() {
         return getContentCount() == 0;
+    }
+
+    /**
+     * Check if the bucket can be deleted
+     */
+    public boolean canBeDeleted() {
+        return status != BucketStatus.DELETED;
+    }
+
+    /**
+     * Check if the bucket is active
+     */
+    public boolean isActive() {
+        return status == BucketStatus.ACTIVE;
+    }
+
+    /**
+     * Check if the bucket is deleted
+     */
+    public boolean isDeleted() {
+        return status == BucketStatus.DELETED;
     }
 
     /**
@@ -187,13 +230,6 @@ public class LegacyBucket {
         }
     }
 
-    /**
-     * Check if this bucket can be deleted
-     * (Cannot delete if it has content)
-     */
-    public boolean canBeDeleted() {
-        return isEmpty();
-    }
 
     /**
      * Get the bucket's full path including category

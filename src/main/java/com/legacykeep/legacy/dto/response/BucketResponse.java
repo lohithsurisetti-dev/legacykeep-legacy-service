@@ -26,6 +26,7 @@ public class BucketResponse {
     private UUID familyId;
     private LegacyBucket.BucketType bucketType;
     private LegacyBucket.PrivacyLevel privacyLevel;
+    private LegacyBucket.BucketStatus status;
     private Boolean isFeatured;
     private Integer sortOrder;
     private ZonedDateTime createdAt;

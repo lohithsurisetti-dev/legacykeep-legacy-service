@@ -43,9 +43,8 @@ public class LegacyBucketServiceImpl implements LegacyBucketService {
         log.info("Fetching buckets with filters - creatorId: {}, familyId: {}, categoryId: {}, bucketType: {}, featured: {}", 
                 creatorId, familyId, categoryId, bucketType, featured);
         
-        // For now, return all buckets with basic pagination
-        // TODO: Implement proper filtering logic
-        Page<LegacyBucket> bucketPage = bucketRepository.findAll(pageable);
+        // Return only active buckets (not deleted) with pagination
+        Page<LegacyBucket> bucketPage = bucketRepository.findAllActive(pageable);
         return bucketPage.map(this::mapToResponse);
     }
 
@@ -81,9 +80,9 @@ public class LegacyBucketServiceImpl implements LegacyBucketService {
     public Page<BucketResponse> searchBuckets(String keyword, Pageable pageable, UUID creatorId, UUID categoryId) {
         log.info("Searching buckets with keyword: '{}', creatorId: {}, categoryId: {}", keyword, creatorId, categoryId);
         
-        // For now, return all buckets with basic pagination
+        // Return only active buckets (not deleted) with basic pagination
         // TODO: Implement proper search logic
-        Page<LegacyBucket> bucketPage = bucketRepository.findAll(pageable);
+        Page<LegacyBucket> bucketPage = bucketRepository.findAllActive(pageable);
         return bucketPage.map(this::mapToResponse);
     }
 
@@ -109,21 +108,25 @@ public class LegacyBucketServiceImpl implements LegacyBucketService {
 
     @Override
     public void deleteBucket(UUID id) {
-        log.info("Deleting bucket: {}", id);
+        log.info("Soft deleting bucket: {}", id);
         
         LegacyBucket bucket = bucketRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Bucket not found with ID: " + id));
         
-        bucketRepository.delete(bucket);
+        // Soft delete - mark as DELETED instead of removing from database
+        bucket.setStatus(LegacyBucket.BucketStatus.DELETED);
+        bucketRepository.save(bucket);
+        
+        log.info("Bucket {} marked as deleted (soft delete)", id);
     }
 
     @Override
     public Page<BucketResponse> getAccessibleBuckets(UUID userId, UUID familyId, Pageable pageable) {
         log.info("Getting accessible buckets for user: {} in family: {}", userId, familyId);
         
-        // For now, return all buckets with basic pagination
+        // Return only active buckets (not deleted) with basic pagination
         // TODO: Implement proper access control logic
-        Page<LegacyBucket> bucketPage = bucketRepository.findAll(pageable);
+        Page<LegacyBucket> bucketPage = bucketRepository.findAllActive(pageable);
         return bucketPage.map(this::mapToResponse);
     }
 
@@ -146,10 +149,11 @@ public class LegacyBucketServiceImpl implements LegacyBucketService {
                 .categoryId(bucket.getCategoryId())
                 .bucketType(bucket.getBucketType())
                 .privacyLevel(bucket.getPrivacyLevel())
+                .status(bucket.getStatus())
                 .isFeatured(bucket.getIsFeatured())
                 .sortOrder(bucket.getSortOrder())
-                .createdAt(bucket.getCreatedAt())
-                .updatedAt(bucket.getUpdatedAt())
+                // .createdAt(bucket.getCreatedAt()) // Removed
+                // .updatedAt(bucket.getUpdatedAt()) // Removed
                 .build();
     }
 }

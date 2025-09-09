@@ -23,13 +23,13 @@ public interface LegacyContentRepository extends JpaRepository<LegacyContent, UU
     /**
      * Find content by bucket
      */
-    @Query("SELECT c FROM LegacyContent c WHERE c.bucketId = :bucketId ORDER BY c.sortOrder, c.createdAt DESC")
+    @Query("SELECT c FROM LegacyContent c WHERE c.bucketId = :bucketId AND c.status != 'DELETED' AND c.status != 'DELETED' ORDER BY c.sortOrder, c.title")
     List<LegacyContent> findByBucketId(@Param("bucketId") UUID bucketId);
 
     /**
      * Find content by bucket with pagination
      */
-    @Query("SELECT c FROM LegacyContent c WHERE c.bucketId = :bucketId ORDER BY c.sortOrder, c.createdAt DESC")
+    @Query("SELECT c FROM LegacyContent c WHERE c.bucketId = :bucketId AND c.status != 'DELETED' AND c.status != 'DELETED' ORDER BY c.sortOrder, c.title")
     Page<LegacyContent> findByBucketId(@Param("bucketId") UUID bucketId, Pageable pageable);
 
     /**
@@ -185,4 +185,10 @@ public interface LegacyContentRepository extends JpaRepository<LegacyContent, UU
      */
     @Query("SELECT c FROM LegacyContent c WHERE c.creatorId = :creatorId AND c.contentType = :contentType ORDER BY c.createdAt DESC")
     List<LegacyContent> findByCreatorIdAndContentType(@Param("creatorId") UUID creatorId, @Param("contentType") LegacyContent.ContentType contentType);
+
+    /**
+     * Find all active content (not deleted) with pagination
+     */
+    @Query("SELECT c FROM LegacyContent c WHERE c.status != 'DELETED' ORDER BY c.sortOrder, c.title")
+    Page<LegacyContent> findAllActive(Pageable pageable);
 }
