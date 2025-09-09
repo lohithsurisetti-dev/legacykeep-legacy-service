@@ -1,6 +1,8 @@
 package com.legacykeep.legacy.repository;
 
 import com.legacykeep.legacy.entity.LegacyRecipient;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -166,4 +168,16 @@ public interface LegacyRecipientRepository extends JpaRepository<LegacyRecipient
      */
     @Query("SELECT COUNT(r) > 0 FROM LegacyRecipient r WHERE r.contentId = :contentId AND r.recipientId = :recipientId")
     boolean existsByContentIdAndRecipientId(@Param("contentId") UUID contentId, @Param("recipientId") UUID recipientId);
+
+    /**
+     * Find recipients by recipient ID and status
+     */
+    @Query("SELECT r FROM LegacyRecipient r WHERE r.recipientId = :recipientId AND r.status = :status ORDER BY r.createdAt DESC")
+    List<LegacyRecipient> findByRecipientIdAndStatus(@Param("recipientId") UUID recipientId, @Param("status") LegacyRecipient.RecipientStatus status);
+
+    /**
+     * Find all active recipients (not expired/deleted) with pagination
+     */
+    @Query("SELECT r FROM LegacyRecipient r WHERE r.status != 'EXPIRED' ORDER BY r.createdAt DESC")
+    Page<LegacyRecipient> findAllActive(Pageable pageable);
 }

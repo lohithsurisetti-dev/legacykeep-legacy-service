@@ -15,6 +15,7 @@
 /Users/lohithsurisetti/LCSK2.0/legacykeep-backend/legacy-service/src/main/java/com/legacykeep/legacy/entity/LegacyContent.java
 /Users/lohithsurisetti/LCSK2.0/legacykeep-backend/legacy-service/src/main/java/com/legacykeep/legacy/repository/LegacyContentRepository.java
 /Users/lohithsurisetti/LCSK2.0/legacykeep-backend/legacy-service/src/main/java/com/legacykeep/legacy/dto/response/ContentResponse.java
+/Users/lohithsurisetti/LCSK2.0/legacykeep-backend/legacy-service/src/main/java/com/legacykeep/legacy/controller/LegacyRecipientController.java
 /Users/lohithsurisetti/LCSK2.0/legacykeep-backend/legacy-service/src/main/java/com/legacykeep/legacy/service/JwtValidationService.java
 /Users/lohithsurisetti/LCSK2.0/legacykeep-backend/legacy-service/src/main/java/com/legacykeep/legacy/repository/LegacyCategoryRepository.java
 /Users/lohithsurisetti/LCSK2.0/legacykeep-backend/legacy-service/src/main/java/com/legacykeep/legacy/security/JwtAuthenticationFilter.java
@@ -22,14 +23,17 @@
 /Users/lohithsurisetti/LCSK2.0/legacykeep-backend/legacy-service/src/main/java/com/legacykeep/legacy/repository/LegacyRecipientRepository.java
 /Users/lohithsurisetti/LCSK2.0/legacykeep-backend/legacy-service/src/main/java/com/legacykeep/legacy/config/SecurityConfig.java
 /Users/lohithsurisetti/LCSK2.0/legacykeep-backend/legacy-service/src/main/java/com/legacykeep/legacy/service/LegacyContentService.java
+/Users/lohithsurisetti/LCSK2.0/legacykeep-backend/legacy-service/src/main/java/com/legacykeep/legacy/service/LegacyRecipientService.java
 /Users/lohithsurisetti/LCSK2.0/legacykeep-backend/legacy-service/src/main/java/com/legacykeep/legacy/controller/LegacyContentController.java
 /Users/lohithsurisetti/LCSK2.0/legacykeep-backend/legacy-service/src/main/java/com/legacykeep/legacy/dto/response/BucketResponse.java
 /Users/lohithsurisetti/LCSK2.0/legacykeep-backend/legacy-service/src/main/java/com/legacykeep/legacy/controller/HealthController.java
 /Users/lohithsurisetti/LCSK2.0/legacykeep-backend/legacy-service/src/main/java/com/legacykeep/legacy/dto/request/CreateCategoryRequest.java
 /Users/lohithsurisetti/LCSK2.0/legacykeep-backend/legacy-service/src/main/java/com/legacykeep/legacy/service/LegacyUserDetailsService.java
+/Users/lohithsurisetti/LCSK2.0/legacykeep-backend/legacy-service/src/main/java/com/legacykeep/legacy/dto/request/CreateRecipientRequest.java
 /Users/lohithsurisetti/LCSK2.0/legacykeep-backend/legacy-service/src/main/java/com/legacykeep/legacy/dto/response/MediaFileResponse.java
 /Users/lohithsurisetti/LCSK2.0/legacykeep-backend/legacy-service/src/main/java/com/legacykeep/legacy/service/impl/LegacyCategoryServiceImpl.java
 /Users/lohithsurisetti/LCSK2.0/legacykeep-backend/legacy-service/src/main/java/com/legacykeep/legacy/dto/request/CreateBucketRequest.java
+/Users/lohithsurisetti/LCSK2.0/legacykeep-backend/legacy-service/src/main/java/com/legacykeep/legacy/service/impl/LegacyRecipientServiceImpl.java
 /Users/lohithsurisetti/LCSK2.0/legacykeep-backend/legacy-service/src/main/java/com/legacykeep/legacy/controller/LegacyBucketController.java
 /Users/lohithsurisetti/LCSK2.0/legacykeep-backend/legacy-service/src/main/java/com/legacykeep/legacy/service/impl/LegacyBucketServiceImpl.java
 /Users/lohithsurisetti/LCSK2.0/legacykeep-backend/legacy-service/src/main/java/com/legacykeep/legacy/service/LegacyCategoryService.java

@@ -129,7 +129,8 @@ public class LegacyRecipient {
         PENDING("Waiting for recipient to accept"),
         ACCEPTED("Recipient has accepted the content"),
         REJECTED("Recipient has rejected the content"),
-        EXPIRED("Invitation has expired");
+        EXPIRED("Invitation has expired"),
+        DELETED("Marked for deletion");
 
         private final String description;
 
@@ -219,7 +220,7 @@ public class LegacyRecipient {
      * Check if this recipient can be deleted
      */
     public boolean canBeDeleted() {
-        return status == RecipientStatus.PENDING || status == RecipientStatus.EXPIRED;
+        return status == RecipientStatus.PENDING;
     }
 
     /**

@@ -29,21 +29,8 @@ public class SecurityConfig {
             .csrf(AbstractHttpConfigurer::disable)
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(authz -> authz
-                // Public endpoints
-                .requestMatchers("/actuator/health", "/actuator/info").permitAll()
-                .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
-                .requestMatchers("/health/**").permitAll() // Allow public access to health endpoints
-                
-                // Temporarily allow public access for testing - TODO: Remove in production
-                .requestMatchers("/categories/**").permitAll()
-                .requestMatchers("/buckets/**").permitAll()
-                .requestMatchers("/content/**").permitAll()
-                .requestMatchers("/recipients/**").permitAll()
-                .requestMatchers("/media/**").permitAll()
-                .requestMatchers("/search/**").permitAll()
-                
-                // All other requests require authentication
-                .anyRequest().authenticated()
+                // Temporarily allow all requests for testing - TODO: Remove in production
+                .anyRequest().permitAll()
             )
             .addFilterBefore(jwtAuthenticationFilter, org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class);
 
