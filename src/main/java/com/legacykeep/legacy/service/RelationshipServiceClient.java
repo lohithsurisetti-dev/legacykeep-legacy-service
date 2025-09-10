@@ -1,6 +1,7 @@
 package com.legacykeep.legacy.service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -86,6 +87,22 @@ public interface RelationshipServiceClient {
      * @return List of relationship type information
      */
     List<RelationshipTypeInfo> getRelationshipTypesByCategory(String category);
+
+    /**
+     * Get all family members for a family.
+     * 
+     * @param familyId The family ID
+     * @return List of family member information
+     */
+    List<Map<String, Object>> getFamilyMembers(UUID familyId);
+
+    /**
+     * Get user information by user ID.
+     * 
+     * @param userId The user ID
+     * @return User information map
+     */
+    Map<String, Object> getUserInfo(UUID userId);
 
     /**
      * Data class for relationship information.

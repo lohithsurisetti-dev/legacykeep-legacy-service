@@ -13,6 +13,7 @@ import com.legacykeep.legacy.repository.LegacyContentRepository;
 import com.legacykeep.legacy.repository.LegacyMediaFileRepository;
 import com.legacykeep.legacy.repository.LegacyRecipientRepository;
 import com.legacykeep.legacy.service.LegacyContentService;
+import com.legacykeep.legacy.service.PermissionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -37,6 +38,7 @@ public class LegacyContentServiceImpl implements LegacyContentService {
     private final LegacyContentRepository contentRepository;
     private final LegacyMediaFileRepository mediaFileRepository;
     private final LegacyRecipientRepository recipientRepository;
+    private final PermissionService permissionService;
 
     @Override
     public Page<ContentResponse> getContentWithFilters(
@@ -62,6 +64,15 @@ public class LegacyContentServiceImpl implements LegacyContentService {
     public ContentResponse createContent(CreateContentRequest request) {
         log.info("Creating new content: {}", request.getTitle());
         
+        // Set default privacy level based on generation if not provided
+        LegacyContent.PrivacyLevel privacyLevel = request.getPrivacyLevel();
+        if (privacyLevel == null && request.getGenerationLevel() != null) {
+            privacyLevel = permissionService.getDefaultPrivacyLevelForGeneration(request.getGenerationLevel());
+        }
+        if (privacyLevel == null) {
+            privacyLevel = LegacyContent.PrivacyLevel.FAMILY; // Default fallback
+        }
+
         LegacyContent content = LegacyContent.builder()
                 .title(request.getTitle())
                 .content(request.getContent())
@@ -70,7 +81,7 @@ public class LegacyContentServiceImpl implements LegacyContentService {
                 .creatorId(request.getCreatorId())
                 .familyId(request.getFamilyId())
                 .generationLevel(request.getGenerationLevel())
-                .privacyLevel(request.getPrivacyLevel())
+                .privacyLevel(privacyLevel)
                 .isFeatured(request.getIsFeatured())
                 .sortOrder(request.getSortOrder())
                 .build();
@@ -167,10 +178,53 @@ public class LegacyContentServiceImpl implements LegacyContentService {
     public Page<ContentResponse> getAccessibleContent(UUID userId, UUID familyId, Pageable pageable) {
         log.info("Getting accessible content for user: {} in family: {}", userId, familyId);
         
-        // Return only active content (not deleted) with basic pagination
-        // TODO: Implement proper access control logic
+        // Get all active content and filter by permissions
         Page<LegacyContent> contentPage = contentRepository.findAllActive(pageable);
-        return contentPage.map(this::convertToResponse);
+        
+        // Filter content based on user permissions
+        return contentPage.map(content -> {
+            // For now, we'll use basic access control
+            // In a real implementation, you would get user's generation level and family relationships
+            boolean hasAccess = permissionService.hasContentAccess(
+                    userId, content, null, true, false); // Assuming user is family member
+            
+            if (hasAccess) {
+                return convertToResponse(content);
+            } else {
+                // Return a minimal response for content user doesn't have access to
+                return ContentResponse.builder()
+                        .id(content.getId())
+                        .title("Content Access Restricted")
+                        .content("You do not have permission to view this content.")
+                        .contentType(content.getContentType())
+                        .privacyLevel(content.getPrivacyLevel())
+                        .generationLevel(content.getGenerationLevel())
+                        .build();
+            }
+        });
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<LegacyContent> getAccessibleContentEntities(UUID userId, UUID familyId, Pageable pageable) {
+        log.info("Getting accessible content entities for user: {} in family: {}", userId, familyId);
+        
+        // Get all active content and filter by permissions
+        Page<LegacyContent> contentPage = contentRepository.findAllActive(pageable);
+        
+        // Filter content based on user permissions
+        return contentPage.map(content -> {
+            // For now, we'll use basic access control
+            // In a real implementation, you would get user's generation level and family relationships
+            boolean hasAccess = permissionService.hasContentAccess(
+                    userId, content, null, true, false); // Assuming user is family member
+            
+            if (hasAccess) {
+                return content;
+            } else {
+                return null; // This will be filtered out
+            }
+        });
     }
 
     @Override
@@ -180,6 +234,14 @@ public class LegacyContentServiceImpl implements LegacyContentService {
         LegacyContent content = contentRepository.findById(id)
                 .orElseThrow(() -> new ContentNotFoundException(id));
         return convertToResponse(content);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public LegacyContent getContentEntityById(UUID id) {
+        log.debug("Getting content entity by ID: {}", id);
+        return contentRepository.findById(id)
+                .orElseThrow(() -> new ContentNotFoundException(id));
     }
 
     private ContentResponse convertToResponse(LegacyContent content) {

@@ -27,6 +27,11 @@ public interface LegacyContentService {
      * Get content by ID
      */
     ContentResponse getContentById(UUID id);
+    
+    /**
+     * Get content entity by ID (for internal use)
+     */
+    LegacyContent getContentEntityById(UUID id);
 
     /**
      * Get content with pagination and filters
@@ -64,4 +69,9 @@ public interface LegacyContentService {
      * Get content accessible to a specific user in a family
      */
     Page<ContentResponse> getAccessibleContent(UUID userId, UUID familyId, Pageable pageable);
+    
+    /**
+     * Get accessible content entities for a user (for internal use)
+     */
+    Page<LegacyContent> getAccessibleContentEntities(UUID userId, UUID familyId, Pageable pageable);
 }

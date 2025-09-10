@@ -202,6 +202,52 @@ public class RelationshipServiceClientImpl implements RelationshipServiceClient 
         }
     }
 
+    @Override
+    public List<Map<String, Object>> getFamilyMembers(UUID familyId) {
+        try {
+            String url = relationshipServiceBaseUrl + "/api/v1/families/" + familyId + "/members";
+            HttpHeaders headers = createHeaders();
+            HttpEntity<String> entity = new HttpEntity<>(headers);
+            
+            ResponseEntity<Map> response = restTemplate.exchange(url, HttpMethod.GET, entity, Map.class);
+            Map<String, Object> responseBody = response.getBody();
+            
+            if (responseBody != null && responseBody.containsKey("data")) {
+                @SuppressWarnings("unchecked")
+                List<Map<String, Object>> members = (List<Map<String, Object>>) responseBody.get("data");
+                return members != null ? members : Collections.emptyList();
+            }
+            
+            return Collections.emptyList();
+        } catch (Exception e) {
+            log.error("Error fetching family members for family '{}': {}", familyId, e.getMessage());
+            return Collections.emptyList();
+        }
+    }
+
+    @Override
+    public Map<String, Object> getUserInfo(UUID userId) {
+        try {
+            String url = relationshipServiceBaseUrl + "/api/v1/users/" + userId;
+            HttpHeaders headers = createHeaders();
+            HttpEntity<String> entity = new HttpEntity<>(headers);
+            
+            ResponseEntity<Map> response = restTemplate.exchange(url, HttpMethod.GET, entity, Map.class);
+            Map<String, Object> responseBody = response.getBody();
+            
+            if (responseBody != null && responseBody.containsKey("data")) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> userInfo = (Map<String, Object>) responseBody.get("data");
+                return userInfo != null ? userInfo : Collections.emptyMap();
+            }
+            
+            return Collections.emptyMap();
+        } catch (Exception e) {
+            log.error("Error fetching user info for user '{}': {}", userId, e.getMessage());
+            return Collections.emptyMap();
+        }
+    }
+
     /**
      * Create HTTP headers with JWT authentication.
      */
