@@ -6,7 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 /**
  * Standard API Response DTO for Legacy Service.
@@ -38,15 +38,19 @@ public class ApiResponse<T> {
     private T data;
     
     /**
-     * Timestamp of the response
+     * Timestamp of the response (milliseconds since epoch)
      */
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
-    private LocalDateTime timestamp;
+    private Long timestamp;
+    
+    /**
+     * Error code (if any)
+     */
+    private String error;
     
     /**
      * Error details (if any)
      */
-    private String error;
+    private Object details;
     
     /**
      * HTTP status code
@@ -70,7 +74,7 @@ public class ApiResponse<T> {
                 .status("success")
                 .message(message)
                 .data(data)
-                .timestamp(LocalDateTime.now())
+                .timestamp(Instant.now().toEpochMilli())
                 .statusCode(200)
                 .build();
     }
@@ -85,7 +89,7 @@ public class ApiResponse<T> {
         return ApiResponse.<T>builder()
                 .status("success")
                 .message(message)
-                .timestamp(LocalDateTime.now())
+                .timestamp(Instant.now().toEpochMilli())
                 .statusCode(200)
                 .build();
     }
@@ -100,13 +104,42 @@ public class ApiResponse<T> {
         return ApiResponse.<T>builder()
                 .status("success")
                 .data(data)
-                .timestamp(LocalDateTime.now())
+                .timestamp(Instant.now().toEpochMilli())
                 .statusCode(200)
                 .build();
     }
     
     /**
      * Create an error response.
+     * 
+     * @param errorCode Error code
+     * @param message Error message
+     * @param details Error details
+     * @return ApiResponse instance
+     */
+    public static <T> ApiResponse<T> error(String errorCode, String message, Object details) {
+        return ApiResponse.<T>builder()
+                .status("error")
+                .message(message)
+                .error(errorCode)
+                .details(details)
+                .timestamp(Instant.now().toEpochMilli())
+                .build();
+    }
+    
+    /**
+     * Create an error response.
+     * 
+     * @param errorCode Error code
+     * @param message Error message
+     * @return ApiResponse instance
+     */
+    public static <T> ApiResponse<T> error(String errorCode, String message) {
+        return error(errorCode, message, null);
+    }
+    
+    /**
+     * Create an error response with status code.
      * 
      * @param message Error message
      * @param error Error details
@@ -118,7 +151,7 @@ public class ApiResponse<T> {
                 .status("error")
                 .message(message)
                 .error(error)
-                .timestamp(LocalDateTime.now())
+                .timestamp(Instant.now().toEpochMilli())
                 .statusCode(statusCode)
                 .build();
     }

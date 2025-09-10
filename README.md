@@ -46,11 +46,24 @@ Main table for storing legacy content metadata
 - Privacy and status controls
 - S3 URLs for media files
 
-#### **legacy_inheritance**
-Tracks content inheritance across generations
-- Inheritance relationships
-- Status tracking (pending, accepted, rejected)
-- Expiration and notification management
+#### **inheritance_rules**
+Defines inheritance rules for content
+- Target types (relationship, generation, context)
+- Inheritance triggers (immediate, time-based, event-based)
+- Rule status and priority management
+- JSONB metadata for flexible configuration
+
+#### **inheritance_status**
+Tracks inheritance status for each recipient
+- Status tracking (pending, granted, accessed, declined, expired)
+- Relationship context and metadata
+- Audit trail for inheritance activities
+
+#### **inheritance_events**
+Logs all inheritance-related activities
+- Event types (rule created, inheritance granted, content accessed)
+- Event data and metadata
+- Complete audit trail
 
 #### **legacy_categories**
 Content organization and categorization
@@ -197,9 +210,18 @@ legacy-content/
 - `GET /api/v1/legacy/media/{id}/download` - Download media file
 
 ### **Inheritance Management**
-- `GET /api/v1/legacy/inheritance` - Get inheritance status
-- `POST /api/v1/legacy/inheritance/{id}/accept` - Accept inheritance
-- `POST /api/v1/legacy/inheritance/{id}/reject` - Reject inheritance
+- `POST /api/v1/inheritance/rules` - Create inheritance rule
+- `GET /api/v1/inheritance/rules/{id}` - Get inheritance rule
+- `PUT /api/v1/inheritance/rules/{id}` - Update inheritance rule
+- `DELETE /api/v1/inheritance/rules/{id}` - Delete inheritance rule
+- `GET /api/v1/inheritance/rules/status/{status}` - Get rules by status
+- `POST /api/v1/inheritance/rules/relationship-type` - Create relationship-based rule
+- `POST /api/v1/inheritance/rules/relationship-category` - Create category-based rule
+- `GET /api/v1/inheritance/recipient/{id}/status` - Get inheritance status
+- `POST /api/v1/inheritance/content/{id}/access/{recipientId}` - Mark content as accessed
+- `POST /api/v1/inheritance/content/{id}/decline/{recipientId}` - Decline inheritance
+- `GET /api/v1/inheritance/relationship-types` - Get available relationship types
+- `GET /api/v1/inheritance/relationship-categories` - Get available relationship categories
 
 ### **Search & Discovery**
 - `GET /api/v1/legacy/search` - Search legacy content
@@ -291,6 +313,8 @@ NOTIFICATION_SERVICE_URL=http://localhost:8083/api/v1
 ## 📞 **Support & Contact**
 
 - **Documentation**: [Legacy Service Architecture](./docs/LEGACY_SERVICE_ARCHITECTURE.md)
+- **Inheritance System**: [Inheritance System Documentation](./INHERITANCE_SYSTEM_DOCUMENTATION.md)
+- **API Testing**: [Inheritance API Testing Summary](./INHERITANCE_API_TESTING_SUMMARY.md)
 - **API Documentation**: [Swagger UI](http://localhost:8085/api/v1/swagger-ui.html)
 - **Health Check**: [Health Endpoint](http://localhost:8085/api/v1/legacy/health)
 - **Issues**: [GitHub Issues](https://github.com/lohithsurisetti-dev/legacykeep-legacy-service/issues)

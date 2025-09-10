@@ -7,6 +7,8 @@ import com.legacykeep.legacy.dto.response.RecipientResponse;
 import com.legacykeep.legacy.entity.LegacyContent;
 import com.legacykeep.legacy.entity.LegacyMediaFile;
 import com.legacykeep.legacy.entity.LegacyRecipient;
+import com.legacykeep.legacy.exception.ContentNotFoundException;
+import com.legacykeep.legacy.exception.ValidationException;
 import com.legacykeep.legacy.repository.LegacyContentRepository;
 import com.legacykeep.legacy.repository.LegacyMediaFileRepository;
 import com.legacykeep.legacy.repository.LegacyRecipientRepository;
@@ -176,7 +178,7 @@ public class LegacyContentServiceImpl implements LegacyContentService {
     public ContentResponse getContentById(UUID id) {
         log.debug("Getting content by ID: {}", id);
         LegacyContent content = contentRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Content not found with ID: " + id));
+                .orElseThrow(() -> new ContentNotFoundException(id));
         return convertToResponse(content);
     }
 
